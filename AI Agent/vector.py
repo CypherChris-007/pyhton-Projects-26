@@ -1,5 +1,40 @@
-from langchain_ollama.llms import OllamaEmbeddings
-from langchain_chroma import chroma
-from langchain_core.documents import Documents
+from langchain_ollama.embeddings import OllamaEmbeddings
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
 import os
 import pandas as pd
+
+df = pd.read_csv("realistic_restaurant_reviews.csv")
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
+
+db_location = "./chrome_langchain_db"
+add_documents = not os.path.exists(db_location)
+
+df = pd.read_csv("realistic_restaurant_reviews.csv")
+print("YOUR CSV COLUMNS ARE:", df.columns.tolist())  # <-- Add this temporary line
+
+if add_documents:
+    documents = []
+    ids = []
+    
+    for i, row in df.iterrows():
+        document = Document(
+            page_content=row["Title"] + " " + row["Review"],
+            metadata={"rating": row["Rating"], "date": row["Date"]},
+            id=str(i)
+        )
+        ids.append(str(i))
+        documents.append(document)
+
+vector_store = Chroma(
+        collection_name="resturant_reviews",
+        persist_directory=db_location,
+        embedding_function=embeddings
+)
+
+if add_documents:
+    vector_store.add_documents(documents=documents, ids=ids)
+
+retriever = vector_store.as_retriever(
+    search_kwargs={"k": 5}
+)

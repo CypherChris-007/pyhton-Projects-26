@@ -1,5 +1,6 @@
 from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
+from vector import retriever
 
 model = OllamaLLM(model="llama3.2")
 
@@ -16,6 +17,8 @@ while True:
     print("\n-----------------------------")
     if question.lower() == "q":
         break
-
-result = chain.invoke({"reviews": [],  "question": question})
-print(result)
+    
+    #indented lines to fix loop issue
+    reviews = retriever.invoke(question)
+    result = chain.invoke({"reviews": reviews, "questions": question})
+    print(result)
